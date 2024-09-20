@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>UPnP Port Manager</title>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Port Manager</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <form method="POST" action="/refresh_ports">
+            <button type="submit">Refresh Ports</button>
+        </form>
+        <form method="POST" action="/open">
+            <h2>Open Port</h2>
+            <label for="external_port">External Port:</label>
+            <input type="number" id="external_port" name="external_port" placeholder="Enter external port" required>
+            <label for="protocol">Protocol:</label>
+            <select id="protocol" name="protocol" required>
+                <option value="TCP">TCP</option>
+                <option value="UDP">UDP</option>
+            </select>
+            <label for="internal_port">Internal Port:</label>
+            <input type="number" id="internal_port" name="internal_port" placeholder="Enter internal port" required>
+            <br><br>
+            <label for="internal_ip">Internal IP:</label>
+            <input type="text" id="internal_ip" name="internal_ip" placeholder="Enter internal IP" required>
+            <label for="description">Description:</label>
+            <input type="text" id="description" name="description" placeholder="Enter description" required>
+            <br><br>
+            <button type="submit">Open Port</button>
+        </form>
+        <h2>UPnP Ports</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>External Port</th>
+                    <th>Protocol</th>
+                    <th>Internal IP</th>
+                    <th>Internal Port</th>
+                    <th>Description</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for port in port_mappings %}
+                <tr>
+                    <td>{{ port.external_port }}</td>
+                    <td>{{ port.protocol }}</td>
+                    <td>{{ port.internal_ip }}</td>
+                    <td>{{ port.internal_port }}</td>
+                    <td>{{ port.description }}</td>
+                    <td>
+                        <form method="POST" action="/close" style="display:inline;">
+                            <input type="hidden" name="port" value="{{ port.external_port }}">
+                            <input type="hidden" name="protocol" value="{{ port.protocol }}">
+                            <button type="submit">Close</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <form method="GET" action="/export" style="display: inline;">
+            <button type="submit">Export Ports</button>
+        </form>
+        <br><br>
+        <form method="POST" action="/import" enctype="multipart/form-data" style="display: inline;">           
+            <button type="submit">Import Ports</button>
+            <input type="file" name="file" accept=".json" required>
+        </form>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get local IP using an AJAX request
+            fetch('/localip')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('internal_ip').value = data;
+                });
+
+            // Set internal port based on external port input
+            document.getElementById('external_port').addEventListener('input', function () {
+                const externalPort = this.value;
+                document.getElementById('internal_port').value = externalPort;
+            });
+        });
+    </script>
+</body>
+
+</html>

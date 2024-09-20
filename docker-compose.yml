@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  upnp-port-manager:
+    image: upnp-port-manager:latest
+    network_mode: host
+    environment:
+      - PORT=56133
+      - SECRET_KEY=your_secret_key_here  # Add your secret key here
+    ports:
+      - "56132:56132"
+    volumes:
+      - ports_data:/usr/src/app/ports_data
+    restart: unless-stopped
+
+volumes:
+  ports_data:
