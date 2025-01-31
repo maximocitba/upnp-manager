@@ -19,7 +19,7 @@ UPnP Port Manager is a Flask-based web application that allows users to manage p
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/upnp-port-manager.git
+git clone https://github.com/maximocitba/upnp-port-manager.git
 cd upnp-port-manager
 ```
 
@@ -29,7 +29,7 @@ cd upnp-port-manager
 1. **Set up environment variables**: Edit docker-compose.yml file to set the PORT and SECRET_KEY variables.
 
 ```yml
-SECRET_KEY=your_secret_key_herere
+SECRET_KEY=your_secret_key_here
 PORT=56133
 ```
 
