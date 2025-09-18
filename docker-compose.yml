@@ -3,13 +3,28 @@ version: '3.8'
 services:
   upnp-manager:
     image: upnp-manager:latest
+    build: .
     network_mode: host
     environment:
       - PORT=56133
-      - SECRET_KEY=your_secret_key_here  # Add your secret key here
+      - SECRET_KEY=your_secret_key_here  # IMPORTANT: Change this in production!
+      - FLASK_ENV=production
     volumes:
       - ports_data:/usr/src/app/ports_data
+      - logs_data:/usr/src/app/logs
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:56133/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   ports_data:
+  logs_data:
