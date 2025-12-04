@@ -54,11 +54,32 @@ def test_upnp_connection():
         upnp.discoverdelay = 200
         devices_discovered = upnp.discover()
         if devices_discovered > 0:
-            upnp.selectigd()
-            upnp_available = True
-            last_upnp_check = datetime.now()
-            logger.info(f"UPnP connection successful - {devices_discovered} device(s) discovered")
-            return True, f"Connected to {devices_discovered} UPnP device(s)"
+            # Try to find the correct IGD if multiple are present
+            try:
+                # selectigd() returns the URL of the selected device
+                # We can't easily force a specific IP with miniupnpc's high-level API
+                # but we can log what we found.
+                igd_url = upnp.selectigd()
+                logger.info(f"Selected IGD: {igd_url}")
+                
+                # Basic check if it works
+                try:
+                    upnp.externalipaddress()
+                    upnp_available = True
+                    last_upnp_check = datetime.now()
+                    logger.info(f"UPnP connection successful - {devices_discovered} device(s) discovered")
+                    return True, f"Connected to {devices_discovered} UPnP device(s)"
+                except Exception as e:
+                    logger.warning(f"Selected IGD {igd_url} is not responding correctly: {e}")
+                    # If the first one fails, we might be stuck with a bad device selection
+                    # miniupnpc doesn't make it easy to iterate through devices with the high-level API
+                    upnp_available = False
+                    return False, f"Selected IGD {igd_url} rejected requests"
+
+            except Exception as e:
+                logger.error(f"Error selecting IGD: {e}")
+                upnp_available = False
+                return False, f"Error selecting IGD: {str(e)}"
         else:
             upnp_available = False
             last_upnp_check = datetime.now()
@@ -216,12 +237,26 @@ def open_port(port, protocol, internal_ip, internal_port, description):
         
         try:
             # Check if port is already mapped
-            existing_mapping = upnp.getspecificportmapping(port, protocol)
-            if existing_mapping[0]:
-                logger.warning(f"Port {port}/{protocol} is already mapped to {existing_mapping[0]}:{existing_mapping[1]}")
-                return False, f"Port {port}/{protocol} is already mapped"
-            
-            result = upnp.addportmapping(port, protocol, internal_ip, internal_port, description, '')
+            try:
+                existing_mapping = upnp.getspecificportmapping(port, protocol)
+                if existing_mapping and existing_mapping[0]:
+                    logger.warning(f"Port {port}/{protocol} is already mapped to {existing_mapping[0]}:{existing_mapping[1]}")
+                    return False, f"Port {port}/{protocol} is already mapped"
+            except Exception as e:
+                logger.warning(f"Could not check existing mapping (continuing): {e}")
+
+            # Try to add port mapping
+            # Some routers/libraries require lease duration (7th arg), others don't.
+            try:
+                result = upnp.addportmapping(port, protocol, internal_ip, internal_port, description, '', 0)
+            except (TypeError, Exception):
+                # Fallback to 6 arguments if 7 are not supported or if it fails
+                try:
+                    result = upnp.addportmapping(port, protocol, internal_ip, internal_port, description, '')
+                except Exception as e:
+                    logger.error(f"addportmapping failed: {e}")
+                    raise
+
             if result:
                 port_mappings = load_ports()
                 if internal_ip == upnp.lanaddr:
