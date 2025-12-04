@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   upnp-manager:
-    image: upnp-manager:latest
-    build: .
+    image: ghcr.io/maximocitba/upnp-manager:latest
+    # build: .
     network_mode: host
     environment:
       - PORT=56133
