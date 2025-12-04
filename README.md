@@ -44,7 +44,28 @@ A production-ready Flask-based web application that allows users to manage port 
 
 ## Getting Started
 
-### Clone the Repository
+### Option 1: Use Pre-built Docker Image (Recommended)
+
+The Docker image is automatically built and published to GitHub Container Registry on every push to main.
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/maximocitba/upnp-manager:latest
+
+# Run with host networking (required for UPnP discovery)
+docker run -d \
+  --name upnp-manager \
+  --network host \
+  -e PORT=56133 \
+  -e SECRET_KEY=your-super-secret-key-here \
+  -v upnp-ports:/usr/src/app/ports_data \
+  -v upnp-logs:/usr/src/app/logs \
+  ghcr.io/maximocitba/upnp-manager:latest
+```
+
+### Option 2: Build from Source
+
+#### Clone the Repository
 
 ```bash
 git clone https://github.com/maximocitba/upnp-manager.git
@@ -249,6 +270,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - ✅ Enhanced security with non-root container execution
 - ✅ Better validation and user feedback
 - ✅ Comprehensive documentation and troubleshooting guides
+- ✅ **NEW**: CI/CD pipeline for automated Docker image publishing
 
 ### v1.0.0
 - ✅ Basic UPnP port management functionality
